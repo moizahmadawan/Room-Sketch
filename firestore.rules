@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Each user can read and write ONLY their own designs: users/<uid>/designs/<designId>
+    match /users/{uid}/designs/{designId} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.id == designId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 200;
+    }
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
